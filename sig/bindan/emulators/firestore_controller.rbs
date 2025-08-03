@@ -1,0 +1,76 @@
+module Bindan
+  module Emulator
+    #
+    # Represents and controls a single instance of the Google Cloud Firestore emulator process.
+    # This class encapsulates the logic for starting, stopping, and waiting for the emulator,
+    # separating process management from the test execution flow.
+    #
+    class FirestoreController
+      @pid: untyped
+
+      @host: untyped
+
+      @port: untyped
+
+      WAIT_TIMEOUT: 15
+
+      INITIAL_BACKOFF_KEY_SEC: ::Float
+
+      BACKOFF_MULTIPLIER: ::Float
+
+      #
+      # @return [Array<String, Integer>]
+      #
+      def self.host_and_port: (?untyped? host, ?untyped? port) -> ::Array[untyped]
+
+      #
+      # Initiates the emulator process and returns a new instance.
+      #
+      # @param [String] import
+      # @param [String] export
+      # @param [String] host
+      # @param [Integer] port
+      # @param [bool] close_io
+      # @raise [Errno]
+      # @return [FirestoreEmulatorController] An instance to manage the emulator lifecycle.
+      #
+      def self.start: (?import: untyped?, ?export: untyped?, ?host: untyped?, ?port: untyped?, ?close_io: bool) -> untyped
+
+      #
+      # kill process group
+      #
+      # @param [Integer] pid
+      # @param [bool] with_message
+      # @return [void]
+      #
+      def self.stop: (untyped pid, ?with_message: bool) -> untyped
+
+      #
+      # @param [Integer] host
+      # @param [Integer] port
+      #
+      def self.kill_process_if_already_exists: (host: untyped, port: untyped, ?with_message: bool) -> untyped
+
+      #
+      # @param [Integer] pid - process group id
+      #
+      def initialize: (untyped pid, untyped host, untyped port) -> void
+
+      #
+      # waits to accessable
+      #
+      # @raise [Timeout::Error] if the emulator does not become available within the configured timeout.
+      # @param [number] timeout
+      # @param [number] backoff
+      # @param [number] multiplier
+      # @return [void]
+      #
+      def wait_available: (?timeout: untyped, ?backoff: untyped, ?multiplier: untyped, ?with_message: bool) -> untyped
+
+      #
+      # @return [void]
+      #
+      def stop: (?with_message: bool) -> untyped
+    end
+  end
+end

@@ -1,0 +1,44 @@
+name: Ruby
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Ruby ${{ matrix.ruby }}
+    env:
+      FIRESTORE_EMULATOR_HOST: localhost:8080
+    strategy:
+      matrix:
+        ruby:
+          - '3.0'
+          - '3.1'
+          - '3.2'
+          - '3.3'
+          - '3.4'
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: oracle
+          java-version: 21
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: cloud-firestore-emulator
+      - name: standard
+        run: bundle exec rake standard
+      - name: spec
+        run: X=/^Bindan::Provider::Storage/ bundle exec rake spec

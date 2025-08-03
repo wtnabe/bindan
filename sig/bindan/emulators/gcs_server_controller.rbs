@@ -1,0 +1,71 @@
+module Bindan
+  module Emulator
+    class GcsServerController
+      @container_name: untyped
+
+      @folder: untyped
+
+      class ContainerCannotOpenError < Error
+      end
+
+      CONTAINER_NAME: "gcs-server"
+
+      WAIT_TIMEOUT: 15
+
+      INITIAL_BACKOFF_KEY_SEC: ::Float
+
+      BACKOFF_MULTIPLIER: ::Float
+
+      #
+      # @raise [Errno]
+      # @param [String] folder
+      # @param [Integer] [port]
+      # @param [String] [name]
+      # @return [GcsServerController]
+      #
+      def self.start: (folder: untyped, ?port: ::Integer, ?name: untyped, ?close_io: bool) -> untyped
+
+      #
+      # @raise [IOError]
+      # @param [String] name
+      # @return [bool]
+      #
+      def self.running?: (name: untyped) -> untyped
+
+      #
+      # @param [String] name
+      # @raise [Errno]
+      # @return [void]
+      #
+      def self.stop: (name: untyped) -> untyped
+
+      #
+      # @param [String] name
+      # @param [String] folder
+      #
+      def initialize: (name: untyped, folder: untyped) -> void
+
+      #
+      # @return
+      #
+      def stop: () -> untyped
+
+      #
+      # @param [String] name
+      # @return [bool]
+      #
+      def running?: () -> untyped
+
+      #
+      # waits container to be running
+      #
+      # @raise [Timeout::Error] if the container does not become available within the configured timeout.
+      # @param [number] timeout
+      # @param [number] backoff
+      # @param [number] multiplier
+      # @return [void]
+      #
+      def wait_available: (?timeout: untyped, ?backoff: untyped, ?multiplier: untyped) -> untyped
+    end
+  end
+end

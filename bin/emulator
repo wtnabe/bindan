@@ -1,0 +1,63 @@
+#! /usr/bin/env ruby
+
+require_relative "../lib/bindan"
+
+module Bindan
+  module Emulator
+    def default_params
+      {
+        "GcsServerController" => {
+          folder: File.join(__dir__, "../tmp/storage")
+        },
+        "FirestoreController" => {
+          export: File.join(__dir__, "../tmp/firestore")
+        }
+      }
+    end
+
+    #
+    # @param [Hash] params
+    # @param [Array] skip
+    # @return [Array<Controller>]
+    #
+    def start(params = Bindan::Emulator.default_params, skip: [])
+      emulator_names = Dir.glob(File.join(__dir__, "../lib/bindan/emulators/") + "*.rb").map { |f|
+        require f
+        File.basename(f, ".rb").split("_").map(&:capitalize).join("")
+      }.reject { |e|
+        skip.include? e
+      }
+
+      emulator_names.map { |e|
+        klass = Bindan::Emulator.const_get(e)
+        param = params[e]
+
+        begin
+          c = param ? klass.start(**param) : klass.start
+          c.wait_available
+          c
+        rescue => e
+          $stderr.puts e
+        end
+      }.compact
+    end
+
+    #
+    # @param [Array<Controller>] emulators
+    #
+    def stop(emulators)
+      emulators.map { |c| c.stop }
+    end
+    module_function :default_params, :start, :stop
+  end
+end
+
+if __FILE__ == $0
+  emulators = Bindan::Emulator.start
+
+  at_exit {
+    Bindan::Emulator.stop(emulators)
+  }
+
+  sleep
+end

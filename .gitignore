@@ -1,0 +1,16 @@
+*~
+*.bak
+Gemfile.lock
+
+/.bundle/
+/.yardoc
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/spec/tmp/
+/tmp/
+.env
+/vendor/
+/.gem_rbs_collection/

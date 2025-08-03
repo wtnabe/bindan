@@ -1,0 +1,61 @@
+module Google
+  module Cloud
+    class Storage
+      def initialize: (**untyped kwargs) -> void
+
+      def bucket: (*untyped args) -> untyped
+    end
+  end
+end
+
+module Bindan
+  module Provider
+    class Storage
+      @_options: Hash[Symbol, untyped]
+
+      @bucket: String
+
+      @separator: String
+
+      @project_id: String
+
+      @_storage: Google::Cloud::Storage
+
+      class FileNotExist < Error
+      end
+
+      #
+      # @param [String] bucket
+      # @param [String] project_id
+      # @param [String] separator
+      # @param [String] credentials
+      # @param [Google::Cloud::Storage] sdk
+      #
+      def initialize: (String bucket, ?raise_error: bool?, ?separator: ::String, ?sdk: untyped, **untyped kwargs) -> void
+
+      attr_reader project_id: String
+
+      attr_reader separator: String
+
+      #
+      # @param [Hash] options
+      # @return [Hash}
+      #
+      def prepare_options: (Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]
+
+      #
+      # decorated bucket name
+      #
+      # @return [String]
+      #
+      def bucket: () -> String
+
+      #
+      # @raise FileNotExist
+      # @param [String] file
+      # @return [String]
+      #
+      def []: (String file) -> untyped
+    end
+  end
+end

@@ -1,0 +1,8 @@
+module Bindan
+  #
+  # @param [Hash[String | Symbol, Provider]] providers
+  # @param [Proc] block
+  # @return [OpenStruct]
+  #
+  def self?.configure: (?providers: ::Hash[Symbol, untyped]) ?{ (::OpenStruct, untyped) -> untyped } -> ::OpenStruct?
+end

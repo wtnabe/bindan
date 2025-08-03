@@ -1,0 +1,12 @@
+services:
+  storage:
+    image: fsouza/fake-gcs-server:latest
+    command: -scheme http -port 4443 -host 0.0.0.0
+    ports:
+      - "4443:4443"
+    healthcheck:
+      # The fake-gcs-server is ready when we can query the bucket list endpoint.
+      test: ["CMD", "curl", "-f", "http://localhost:4443/storage/v1/b"]
+      interval: 1s
+      timeout: 5s
+      retries: 20

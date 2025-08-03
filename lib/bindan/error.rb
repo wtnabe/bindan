@@ -1,0 +1,3 @@
+module Bindan
+  class Error < StandardError; end
+end

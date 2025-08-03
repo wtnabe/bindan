@@ -1,0 +1,47 @@
+module Google
+  module Cloud
+    class Firestore
+      def initialize: (**untyped kwargs) -> void
+
+      def doc: (*untyped args) -> untyped
+    end
+  end
+end
+
+module Bindan
+  module Provider
+    class Firestore
+      @_options: Hash[Symbol, untyped]
+
+      @collection: String
+
+      @project_id: String
+
+      @_firestore: Google::Cloud::Firestore
+
+      class ColOrDocNotExist < Error
+      end
+
+      #
+      # @param [String] collection
+      # @param [bool] raise_error
+      # @param [Google::Cloud::Firestore] sdk
+      #
+      def initialize: (?String? collection, ?project_id: String?, ?raise_error: bool, ?sdk: untyped, **untyped kwargs) -> void
+
+      attr_reader project_id: String
+
+      #
+      # @param [Hash] pair
+      #
+      def _prepare: (Hash[String, untyped] pair) -> untyped
+
+      #
+      # @raise ColOrDocNotExist
+      # @param [String] key
+      # @return [Hash]
+      #
+      def []: (String key) -> untyped
+    end
+  end
+end

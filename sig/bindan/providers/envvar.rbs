@@ -1,0 +1,22 @@
+module Bindan
+  module Provider
+    class Envvar
+      @_env: Hash[String, String]
+
+      @_options: Hash[untyped, untyped]
+
+      #
+      # @param [Hash] env
+      # @param [Hash] options
+      #
+      def initialize: (?::Hash[String, String] env, ?::Hash[untyped, untyped] options) -> void
+
+      #
+      # @raise KeyError
+      # @param [String] key
+      # @return [String]
+      #
+      def []: (String key) -> untyped
+    end
+  end
+end
