@@ -1,6 +1,6 @@
 # Bindan
 [![Gem Version](https://badge.fury.io/rb/bindan.svg)](https://badge.fury.io/rb/bindan)
-[![CI](https://github.com/wtnabe/bindan/actions/workflows/main.yml/badge.svg)](https://github.com/wtnabe/bindan/actions/workflows/main.yml)
+[![CI](https://github.com/wtnabe/bindan/actions/workflows/test.yml/badge.svg)](https://github.com/wtnabe/bindan/actions/workflows/test.yml)
 
 Bindan is a Ruby gem for building single configuration object from various sources with providers (that is bundled  Google Cloud Storage and Firestore platform by default). It provides a flexible way to manage application settings, supporting lazy initialization and seamless switching between development (using emulators) and production (eg. actual GCP services) environments.
 
@@ -66,6 +66,8 @@ and
 
 ```ruby
 require "bindan"
+require "google/client/storage"
+require "google/client/firestore"
 
 # Define your configuration providers
 providers = {
