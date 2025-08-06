@@ -25,9 +25,17 @@ module Bindan
   end
   module_function :configure
 
+  #
+  # @param [Class] klass
+  # @return [self]
+  #
   def self.extended(klass)
     klass.instance_eval do
       @_config = nil
+
+      #
+      # @return [OpenStruct]
+      #
       def self.config
         @_config
       end

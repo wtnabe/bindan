@@ -1,8 +1,19 @@
 module Bindan
   #
+  # @param [Class] klass
+  # @return [self]
+  #
+  def self.extended: (untyped klass) -> untyped
+
+  #
   # @param [Hash[String | Symbol, Provider]] providers
   # @param [Proc] block
   # @return [OpenStruct]
   #
   def self?.configure: (?providers: ::Hash[Symbol, untyped]) ?{ (::OpenStruct, untyped) -> untyped } -> ::OpenStruct?
+
+  #
+  # @return [OpenStruct]
+  #
+  def self?.config: () -> ::OpenStruct?
 end
