@@ -15,10 +15,23 @@ module Bindan
     if block.is_a? Proc
       container = OpenStruct.new
       block.call(container, Struct.new(*providers.keys).new(*providers.values)) # steep:ignore
+      if instance_variables.include?(:@_config)
+        instance_variable_set :@_config, container.freeze
+      end
       container
     else
       warn "no block given for `configure'"
     end
   end
   module_function :configure
+
+  def self.extended(klass)
+    klass.instance_eval do
+      @_config = nil
+      def self.config
+        @_config
+      end
+    end
+    public :configure
+  end
 end
