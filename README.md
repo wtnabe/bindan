@@ -52,6 +52,22 @@ end
 puts config.database_host # => "localhost"
 ```
 
+or
+
+```ruby
+require "bindan"
+
+class App
+  extend Bindan
+end
+
+App.configure do |c, pr|
+  c.database_host = pr.env["DATABASE_HOST"] || "localhost"
+end
+
+# unless $DATABASE_HOST environment variable
+puts App.config.database_host # => "localhost"
+```
 ### with Multiple Providers
 
 in Gemfile
