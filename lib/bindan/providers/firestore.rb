@@ -75,18 +75,24 @@ module Bindan
       end
 
       #
+      # @param [String] key document ID/path relative to collection, or full path if omitted
+      # @return [String]
+      #
+      def document_path(key)
+        if @collection.nil? && key.include?("/")
+          key
+        else
+          [@collection, key].join("/")
+        end
+      end
+
+      #
       # @raise ColOrDocNotExist
       # @param [String] key document ID/path relative to collection, or full path if omitted
       # @return [Hash]
       #
       def [](key)
-        doc_path =
-          if @collection.nil? && key.include?("/")
-            key
-          else
-            [@collection, key].join("/")
-          end
-
+        doc_path = document_path(key)
         doc = @_firestore.doc(doc_path).get
 
         if @_options[:raise_error] && !doc.data

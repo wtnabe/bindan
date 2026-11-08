@@ -36,6 +36,8 @@ module Bindan
       #
       def _prepare: (Hash[String, untyped] pair) -> untyped
 
+      def document_path: (String key) -> String
+
       #
       # @raise ColOrDocNotExist
       # @param [String] key
