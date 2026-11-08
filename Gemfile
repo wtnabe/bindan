@@ -13,6 +13,7 @@ gem "minitest", "~> 5.16"
 gem "standard", "~> 1.3"
 
 gem "minitest-power_assert", "~> 0.3.1"
+gem "power_assert", "~> 2.0"
 gem "minitest-reporters", "~> 1.7"
 
 if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.1")

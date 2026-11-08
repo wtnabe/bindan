@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "pull-req/**"
 
   pull_request:
 
@@ -40,5 +41,29 @@ jobs:
           install_components: cloud-firestore-emulator
       - name: standard
         run: bundle exec rake standard
+      - name: Start Storage emulator
+        id: storage
+        run: |
+          mkdir -p spec/tmp/storage/-config
+          cp spec/support/storage/rack_env spec/tmp/storage/-config/
+          container_id=$(docker run --detach --rm \
+            --publish 127.0.0.1:4443:4443 \
+            --volume "$PWD/spec/tmp/storage:/data:ro" \
+            fsouza/fake-gcs-server:1.52.3 -scheme http)
+          echo "container_id=$container_id" >> "$GITHUB_OUTPUT"
+          curl --fail --silent --show-error --output /dev/null \
+            --retry 30 --retry-connrefused --retry-delay 1 \
+            --retry-max-time 60 --max-time 2 \
+            http://localhost:4443/storage/v1/b/-config/o/rack_env
       - name: spec
-        run: X=/^Bindan::Provider::Storage/ bundle exec rake spec
+        run: bundle exec rake spec
+      - name: Storage emulator logs
+        if: always() && steps.storage.outputs.container_id != ''
+        env:
+          STORAGE_CONTAINER_ID: ${{ steps.storage.outputs.container_id }}
+        run: docker logs "$STORAGE_CONTAINER_ID"
+      - name: Stop Storage emulator
+        if: always() && steps.storage.outputs.container_id != ''
+        env:
+          STORAGE_CONTAINER_ID: ${{ steps.storage.outputs.container_id }}
+        run: docker stop "$STORAGE_CONTAINER_ID"

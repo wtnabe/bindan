@@ -1,6 +1,7 @@
 require "minitest/autorun"
 require "minitest-power_assert"
 require "minitest/reporters"
+require "fileutils"
 
 Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
 
@@ -14,6 +15,10 @@ ENV["GOOGLE_CLOUD_PROJECT"] = "bindan-test"
 ENV["GCLOUD_PROJECT"] = "bindan-test"
 ENV["STORAGE_EMULATOR_HOST"] = "http://localhost:4443"
 ENV["FIRESTORE_EMULATOR_HOST"] = "localhost:8080"
+
+config_folder = File.join(__dir__, "tmp/storage/-config")
+FileUtils.mkdir_p(config_folder)
+FileUtils.cp(File.join(__dir__, "support/storage/rack_env"), config_folder)
 
 #
 # setup emulators

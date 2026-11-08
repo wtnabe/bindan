@@ -1,15 +1,7 @@
 require "spec_helper"
-require "fileutils"
 
 describe Bindan::Provider::Storage do
   before {
-    @config_dir = File.join(__dir__, "../tmp/storage/-config")
-    FileUtils.mkdir_p(@config_dir)
-    FileUtils.cp(
-      File.join(__dir__, "../support/storage/rack_env"),
-      @config_dir
-    )
-
     @provider = Bindan::Provider::Storage.new("config")
   }
 
