@@ -7,6 +7,8 @@ gemspec
 
 gem "google-cloud-storage", "~> 1.56"
 gem "google-cloud-firestore", "~> 3.0"
+gem "json", "< 3"
+gem "cgi", ">= 0.3.5"
 
 gem "rake", "~> 13.0"
 gem "minitest", "~> 5.16"
