@@ -33,7 +33,20 @@ module Bindan
       class ColOrDocNotExist < Error; end
 
       #
-      # @param [String] collection
+      # 1. Supply collection when registering the provider to avoid repeating it
+      #    on each document lookup.
+      # 2. Omit collection to access multiple collections through one provider.
+      #    Each lookup must then explicitly supply a full document path
+      #    (collection/document).
+      #
+      # Path examples (collection, key -> document path):
+      # - "app-settings", "flags"       -> "app-settings/flags"
+      # - omitted, "app-settings/flags" -> "app-settings/flags"
+      # - omitted, "maintenance/status" -> "maintenance/status"
+      # - "app-settings", "other/flags" -> "app-settings/other/flags" (invalid)
+      # - omitted, "flags"              -> "/flags" (invalid)
+      #
+      # @param [String, nil] collection fixed collection path, or nil for full-path keys
       # @param [bool] raise_error
       # @param [Google::Cloud::Firestore] sdk
       #
@@ -63,7 +76,7 @@ module Bindan
 
       #
       # @raise ColOrDocNotExist
-      # @param [String] key
+      # @param [String] key document ID/path relative to collection, or full path if omitted
       # @return [Hash]
       #
       def [](key)

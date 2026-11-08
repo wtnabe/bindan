@@ -31,9 +31,24 @@ module Bindan
       class FileNotExist < Error; end
 
       #
-      # @param [String] bucket
-      # @param [String] project_id
-      # @param [String] separator
+      # Build the bucket name as [project_id, bucket].join(separator). Keeping
+      # the same bucket suffix across projects makes staging environments easier
+      # to set up: changing project_id selects the corresponding environment's
+      # bucket without changing the suffix or the configuration lookup code.
+      #
+      # Naming examples (bucket argument: "config-bucket"):
+      # - project_id: "my-project", default separator -> "my-project-config-bucket"
+      # - project_id: "staging", default separator    -> "staging-config-bucket"
+      # - project_id omitted, default separator      -> "-config-bucket"
+      # - project_id omitted, separator: ""          -> "config-bucket"
+      # - project_id: "my-project", separator: ""     -> "my-projectconfig-bucket"
+      #
+      # Only an explicitly supplied project_id is used in the bucket name;
+      # a project ID automatically resolved by the SDK is not used.
+      #
+      # @param [String] bucket bucket name suffix, not the full bucket name
+      # @param [String] project_id project ID used for both the SDK and name prefix
+      # @param [String] separator delimiter between project_id and bucket (default: "-")
       # @param [String] credentials
       # @param [Google::Cloud::Storage] sdk
       #

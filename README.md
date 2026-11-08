@@ -82,14 +82,14 @@ and
 
 ```ruby
 require "bindan"
-require "google/client/storage"
-require "google/client/firestore"
+require "google/cloud/storage"
+require "google/cloud/firestore"
 
 # Define your configuration providers
 providers = {
   env: Bindan::Provider::Envvar.new,
-  storage: Bindan::Provider::Storage.new(bucket: "my-config-bucket"),
-  firestore: Bindan::Provider::Firestore.new(collection: "app-settings")
+  storage: Bindan::Provider::Storage.new("config-bucket", project_id: "my-project"),
+  firestore: Bindan::Provider::Firestore.new("app-settings-collection", project_id: "my-project")
 }
 
 # Configure Bindan
@@ -107,6 +107,8 @@ puts config.feature_flags # => (Value loaded from Firestore)
 ```
 
 In the `configure` block, you define how each configuration key is mapped to a provider. The provider name is `providers` Hash key.
+
+Replace `my-project` with your Google Cloud project ID. Storage joins `project_id` and the bucket argument with `separator` (default: `"-"`), so this example reads the `api_key` object from the existing `my-project-config-bucket` bucket. Firestore reads the `app-settings-collection/feature_flags_document` document in the same project.
 
 ## Development
 
