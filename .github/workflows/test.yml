@@ -41,11 +41,13 @@ jobs:
           install_components: cloud-firestore-emulator
       - name: standard
         run: bundle exec rake standard
+      - name: spec
+        run: bundle exec rake spec
       - name: Start Storage emulator
         id: storage
         run: |
           mkdir -p spec/tmp/storage/-config
-          cp spec/support/storage/rack_env spec/tmp/storage/-config/
+          cp -R spec/support/storage/. spec/tmp/storage/-config/
           container_id=$(docker run --detach --rm \
             --publish 127.0.0.1:4443:4443 \
             --volume "$PWD/spec/tmp/storage:/data:ro" \
@@ -55,8 +57,8 @@ jobs:
             --retry 30 --retry-connrefused --retry-delay 1 \
             --retry-max-time 60 --max-time 2 \
             http://localhost:4443/storage/v1/b/-config/o/rack_env
-      - name: spec
-        run: bundle exec rake spec
+      - name: integration spec
+        run: bundle exec rake spec:integration
       - name: Storage emulator logs
         if: always() && steps.storage.outputs.container_id != ''
         env:

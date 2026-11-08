@@ -1,4 +1,4 @@
-require "spec_helper"
+require "integration_helper"
 
 describe Bindan::Provider::Firestore do
   before {
