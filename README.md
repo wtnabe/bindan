@@ -112,11 +112,11 @@ Replace `my-project` with your Google Cloud project ID. Storage joins `project_i
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+After checking out the repo, run `bin/setup` to install development dependencies and prepare the emulators. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
 ### Prerequisites for Development
 
-This gem is designed to interacts with Google Cloud services as a first-class citizen. For local development and testing, it uses emulators. Please install the following tools:
+The development environment includes the following tools for running heavy integration tests locally:
 
 1.  **Google Cloud CLI:** [Installation the gcloud CLI](https://cloud.google.com/sdk/docs/install)
 2.  **Docker:** [Get Docker](https://docs.docker.com/get-docker/)
@@ -143,11 +143,19 @@ end
 
 ### Running Tests
 
-The test suite is configured to automatically start the emulators (including `fake-gcs-server` via Docker), run the tests against them, and shut them down. Simply run:
+Use the lightweight unit tests during normal development. They do not start emulators:
 
 ```bash
 bundle exec rake spec
 ```
+
+Run the heavy integration tests locally when verifying Provider behavior against the real SDKs and emulators. This suite automatically starts and stops the emulators:
+
+```bash
+bundle exec rake spec:integration
+```
+
+CI runs both suites as well.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
