@@ -1,12 +1,21 @@
 require "spec_helper"
-require "fileutils"
+require_relative "../lib/bindan/emulators/gcs_server_controller"
+require_relative "../lib/bindan/emulators/firestore_controller"
 
 # Set up environment variables for client libraries to connect to emulators.
 ENV["GCP_PROJECT"] = "bindan-test"
 ENV["GOOGLE_CLOUD_PROJECT"] = "bindan-test"
 ENV["GCLOUD_PROJECT"] = "bindan-test"
 ENV["STORAGE_EMULATOR_HOST"] = "http://localhost:4443"
-ENV["FIRESTORE_EMULATOR_HOST"] = "localhost:8080"
+ENV["FIRESTORE_EMULATOR_HOST"] = "127.0.0.1:8080"
+
+module IntegrationEmulators
+  FIRESTORE_PROJECT_ID = "bindan-test"
+
+  class << self
+    attr_accessor :firestore
+  end
+end
 
 if ENV["CI"]
   Google::Cloud.configure.storage.credentials = Google::Auth::Credentials.new(
@@ -15,27 +24,11 @@ if ENV["CI"]
   )
 end
 
-config_folder = File.join(__dir__, "tmp/storage/-config")
-FileUtils.mkdir_p(config_folder)
-FileUtils.cp_r(File.join(__dir__, "support/storage/."), config_folder)
-
 #
-# setup emulators
+# Wait for externally managed emulators; tests never start or stop containers.
 #
-load File.join(__dir__, "../bin/emulator")
-
-emulators = Bindan::Emulator.start(
-  {
-    "GcsServerController" => {
-      folder: File.join(__dir__, "tmp/storage")
-    },
-    "FirestoreController" => {
-      export: File.join(__dir__, "tmp/firestore")
-    }
-  },
-  skip: ENV["CI"] ? ["GcsServerController"] : []
+Bindan::Emulator::GcsServerController.new.wait_available
+IntegrationEmulators.firestore = Bindan::Emulator::FirestoreController.new(
+  project_id: IntegrationEmulators::FIRESTORE_PROJECT_ID
 )
-
-Minitest.after_run {
-  emulators.map { |c| c.stop }
-}
+IntegrationEmulators.firestore.wait_available

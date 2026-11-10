@@ -12,8 +12,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Ruby ${{ matrix.ruby }}
-    env:
-      FIRESTORE_EMULATOR_HOST: localhost:8080
     strategy:
       matrix:
         ruby:
@@ -25,47 +23,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: oracle
-          java-version: 21
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
-      - name: setup Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          install_components: cloud-firestore-emulator
       - name: standard
         run: bundle exec rake standard
       - name: spec
         run: bundle exec rake spec
-      - name: Start Storage emulator
-        id: storage
-        run: |
-          mkdir -p spec/tmp/storage/-config
-          cp -R spec/support/storage/. spec/tmp/storage/-config/
-          container_id=$(docker run --detach --rm \
-            --publish 127.0.0.1:4443:4443 \
-            --volume "$PWD/spec/tmp/storage:/data:ro" \
-            fsouza/fake-gcs-server:1.52.3 -scheme http)
-          echo "container_id=$container_id" >> "$GITHUB_OUTPUT"
-          curl --fail --silent --show-error --output /dev/null \
-            --retry 30 --retry-connrefused --retry-delay 1 \
-            --retry-max-time 60 --max-time 2 \
-            http://localhost:4443/storage/v1/b/-config/o/rack_env
+      - name: Pull emulator images
+        run: docker compose pull
+      - name: Start emulators
+        run: docker compose up --detach --wait --wait-timeout 60
       - name: integration spec
         run: bundle exec rake spec:integration
-      - name: Storage emulator logs
-        if: always() && steps.storage.outputs.container_id != ''
-        env:
-          STORAGE_CONTAINER_ID: ${{ steps.storage.outputs.container_id }}
-        run: docker logs "$STORAGE_CONTAINER_ID"
-      - name: Stop Storage emulator
-        if: always() && steps.storage.outputs.container_id != ''
-        env:
-          STORAGE_CONTAINER_ID: ${{ steps.storage.outputs.container_id }}
-        run: docker stop "$STORAGE_CONTAINER_ID"
+      - name: Emulator logs
+        if: always()
+        run: docker compose logs --no-color
+      - name: Stop emulators
+        if: always()
+        run: docker compose down --timeout 10

@@ -3,10 +3,24 @@ services:
     image: fsouza/fake-gcs-server:latest
     command: -scheme http -port 4443 -host 0.0.0.0
     ports:
-      - "4443:4443"
+      - "127.0.0.1:4443:4443"
+    volumes:
+      - "./spec/support/storage:/data/-config:ro"
     healthcheck:
       # The fake-gcs-server is ready when we can query the bucket list endpoint.
-      test: ["CMD", "curl", "-f", "http://localhost:4443/storage/v1/b"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4443/storage/v1/b"]
       interval: 1s
       timeout: 5s
       retries: 20
+  firestore:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command:
+      - gcloud
+      - emulators
+      - firestore
+      - start
+      - --host-port=0.0.0.0:8080
+      - --database-mode=firestore-native
+      - --edition=standard
+    ports:
+      - "127.0.0.1:8080:8080"
