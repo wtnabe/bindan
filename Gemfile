@@ -7,6 +7,7 @@ gemspec
 
 gem "google-cloud-storage", "~> 1.56"
 gem "google-cloud-firestore", "~> 3.0"
+gem "google-cloud-secret_manager", "~> 2.0.2"
 gem "json", "< 3"
 gem "cgi", ">= 0.3.5"
 

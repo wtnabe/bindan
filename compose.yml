@@ -24,3 +24,13 @@ services:
       - --edition=standard
     ports:
       - "127.0.0.1:8080:8080"
+  secret-manager:
+    image: ghcr.io/blackwell-systems/gcp-secret-manager-emulator-dual:1.9.0
+    environment:
+      IAM_MODE: "off"
+      GCP_MOCK_LOG_LEVEL: error
+      GCP_MOCK_PERSIST: "false"
+    tmpfs:
+      - /data
+    ports:
+      - "127.0.0.1:9090:9090"

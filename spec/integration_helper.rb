@@ -1,6 +1,7 @@
 require "spec_helper"
 require_relative "../lib/bindan/emulators/gcs_server_controller"
 require_relative "../lib/bindan/emulators/firestore_controller"
+require_relative "../lib/bindan/emulators/secret_manager_controller"
 
 # Set up environment variables for client libraries to connect to emulators.
 ENV["GCP_PROJECT"] = "bindan-test"
@@ -11,9 +12,10 @@ ENV["FIRESTORE_EMULATOR_HOST"] = "127.0.0.1:8080"
 
 module IntegrationEmulators
   FIRESTORE_PROJECT_ID = "bindan-test"
+  SECRET_MANAGER_PROJECT_ID = "bindan-test"
 
   class << self
-    attr_accessor :firestore
+    attr_accessor :firestore, :secret_manager
   end
 end
 
@@ -32,3 +34,8 @@ IntegrationEmulators.firestore = Bindan::Emulator::FirestoreController.new(
   project_id: IntegrationEmulators::FIRESTORE_PROJECT_ID
 )
 IntegrationEmulators.firestore.wait_available
+IntegrationEmulators.secret_manager = Bindan::Emulator::SecretManagerController.new(
+  project_id: IntegrationEmulators::SECRET_MANAGER_PROJECT_ID
+)
+Minitest.after_run { IntegrationEmulators.secret_manager.close }
+IntegrationEmulators.secret_manager.wait_available
