@@ -1,151 +1,121 @@
 require_relative "../error"
-require "fileutils"
-require "open3"
-require "socket"
+require "net/http"
 require "timeout"
-require "uri"
 
 module Bindan
   module Emulator
     #
-    # Represents and controls a single instance of the Google Cloud Firestore emulator process.
-    # This class encapsulates the logic for starting, stopping, and waiting for the emulator,
-    # separating process management from the test execution flow.
+    # Represents and controls a single instance of the Google Cloud Firestore emulator service.
+    # This class checks readiness and clears test data without managing containers.
     #
     class FirestoreController
-      WAIT_TIMEOUT = 15 # seconds
+      WAIT_TIMEOUT = 60 # seconds
       INITIAL_BACKOFF_KEY_SEC = 0.1 # seconds
       BACKOFF_MULTIPLIER = 1.5
 
-      class << self
-        #
-        # @return [Array<String, Integer>]
-        #
-        def host_and_port(host = nil, port = nil)
-          host, port = ENV["FIRESTORE_EMULATOR_HOST"].to_s.split(":") if ENV["FIRESTORE_EMULATOR_HOST"]
+      class Error < StandardError; end
 
-          host ||= ENV["CI"] ? "0.0.0.0" : "localhost"
-          port ||= 8080
-
-          [host, port]
-        end
-
-        #
-        # Initiates the emulator process and returns a new instance.
-        #
-        # @param [String] import
-        # @param [String] export
-        # @param [String] host
-        # @param [Integer] port
-        # @param [bool] close_io
-        # @raise [Errno]
-        # @return [FirestoreEmulatorController] An instance to manage the emulator lifecycle.
-        #
-        def start(import: nil, export: nil, host: nil, port: nil, close_io: true)
-          host, port = host_and_port(host, port)
-
-          puts " Starting Firestore emulator ..." unless close_io
-          kill_process_if_already_exists(host: host, port: port, with_message: !close_io)
-
-          #
-          # This command is known to launch a background Java process and then exit.
-          # Trying keep process info with process group
-          #
-          cmd = "gcloud emulators firestore start --host-port=#{host}:#{port}"
-          cmd += " --import-data=#{import}" if import
-          cmd += " --export-on-exit=#{export}" if export
-          opts = close_io ? {out: "/dev/null", err: "/dev/null"} : {}
-          pid = Process.spawn(*cmd, pgroup: true, **opts) # steep:ignore
-
-          puts "   Emulator process initiated." unless close_io
-          new(pid, host, port)
-        end
-
-        #
-        # kill process group
-        #
-        # @param [Integer] pid
-        # @param [bool] with_message
-        # @return [void]
-        #
-        def stop(pid, with_message: true)
-          puts "\n=> Stopping Firestore emulator..." if with_message
-
-          begin
-            Process.kill("TERM", -pid)
-            Process.wait(-pid)
-          rescue Errno::ESRCH, Errno::ECHILD
-            # Process was already killed or doesn't exist, which is fine.
-          end
-
-          puts "   Emulator process terminated." if with_message
-        end
-
-        #
-        # @param [Integer] host
-        # @param [Integer] port
-        #
-        def kill_process_if_already_exists(host:, port:, with_message: true)
-          TCPSocket.new(host, port).close
-
-          # `lsof -Fg -i:PORT` returns PIDs of the process listening on the port.
-          process_ids, = Open3.capture3(*"lsof -Fg -g -s TCP:LISTEN -i :#{port}".split(" "))
-          process_group = process_ids.lines.map(&:chomp).find { |id| id =~ /^g([0-9]+)/ }
-
-          if process_group
-            id = process_group[1..].to_i # strip first letter
-            puts "   Found emulator process group #{id} on port #{port}. Terminating." if with_message
-            stop(id, with_message: false)
-          end
-        rescue Errno::ECONNREFUSED
-          # noop
-        end
-      end # of class methods
+      attr_reader :project_id
 
       #
-      # @param [Integer] pid - process group id
+      # Select the project used by the integration tests.
       #
-      def initialize(pid, host, port)
-        @pid = pid
-        @host = host
-        @port = port
+      def initialize(project_id: "bindan-test")
+        @project_id = project_id
       end
 
       #
-      # waits to accessable
+      # @return [String] SDK endpoint (host:port, without an HTTP scheme)
       #
-      # @raise [Timeout::Error] if the emulator does not become available within the configured timeout.
+      def endpoint
+        "127.0.0.1:8080"
+      end
+
+      #
+      # Wait for an SDK read, retrying false with bounded exponential backoff.
+      #
+      # @return [self] after a successful SDK read
+      # @raise [Error] when the overall deadline expires, including during a check
       # @param [number] timeout
       # @param [number] backoff
       # @param [number] multiplier
-      # @return [void]
+      # Failures/interruption propagate; container lifecycle is managed externally.
       #
       def wait_available(timeout: WAIT_TIMEOUT, backoff: INITIAL_BACKOFF_KEY_SEC, multiplier: BACKOFF_MULTIPLIER, with_message: true)
-        last_rescue_error = nil
-
-        puts "   Waiting for emulator to be ready on #{@host}:#{@port}..." if with_message
-        count = 1
-        Timeout.timeout(timeout) do
-          loop do
-            TCPSocket.new(@host, @port).close
-            puts "   Emulator is up and listening." if with_message
-            return
-          rescue Errno::ECONNREFUSED, Errno::EADDRNOTAVAIL => e
-            last_rescue_error = e
-            sleep backoff
-            count += 1
-            backoff *= multiplier**count
-          end
+        deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+        @readiness_error = nil
+        puts "   Waiting for Firestore SDK on #{endpoint}..." if with_message
+        loop do
+          remaining = deadline - Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          raise Error, "Firestore readiness timed out: #{@readiness_error}" unless remaining > 0
+          return self if Timeout.timeout(remaining) { sdk_ready?([remaining, 2].min) }
+          remaining = deadline - Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          sleep [backoff, remaining].min if remaining > 0
+          backoff *= multiplier
         end
-      rescue Timeout::Error
-        raise last_rescue_error # steep:ignore
+      rescue Timeout::Error => error
+        raise Error, "Firestore readiness timed out: #{error.message}"
       end
 
       #
-      # @return [void]
+      # Clear only this project's default database and wait for DELETE completion.
       #
-      def stop(with_message: true)
-        self.class.stop(@pid, with_message: with_message)
+      # @return [self] after HTTP 200, before the next test seeds any data
+      # @raise [Error] for an unsuccessful HTTP status
+      # HTTP/timeout errors propagate; no lifecycle or other-project operations occur.
+      #
+      def clear(timeout: 10)
+        path = "/emulator/v1/projects/#{project_id}/databases/(default)/documents"
+        response = Timeout.timeout(timeout) { delete_documents(path, timeout) }
+        raise Error, "Firestore clear #{project_id} failed: HTTP #{response.code}: #{response.body}" unless response.code == "200"
+        self
+      end
+
+      private
+
+      #
+      # Check a read through the V1 public API, with per-call timeout and no SDK retry.
+      # Keep this lower-level boundary here: high-level doc.get can retry past its timeout.
+      #
+      # @return [Boolean] true on a completed read (a missing document is also valid),
+      #   false only for transient unavailable/deadline errors during startup
+      # Other SDK/configuration errors propagate; no document is written.
+      # Each attempt closes its channel; wait_available also enforces an overall deadline.
+      #
+      def sdk_ready?(timeout)
+        require "google/cloud/firestore/v1"
+        require "grpc"
+        channel = GRPC::Core::Channel.new(endpoint, {}, :this_channel_is_insecure)
+        client = Google::Cloud::Firestore::V1::Firestore::Client.new do |config|
+          config.endpoint = endpoint
+          config.credentials = channel
+        end
+        database = "projects/#{project_id}/databases/(default)"
+        client.batch_get_documents(
+          {database: database, documents: ["#{database}/documents/bindan-control/readiness"]},
+          {timeout: timeout, retry_policy: {retry_codes: []}}
+        ).each { |_| }
+        @readiness_error = nil
+        true
+      rescue Google::Cloud::UnavailableError, Google::Cloud::DeadlineExceededError => error
+        @readiness_error = error
+        false
+      ensure
+        channel&.close
+      end
+
+      #
+      # Send clear's local DELETE without environment proxies or redirect following.
+      #
+      # @return [Net::HTTPResponse] the completed response; clear validates its status
+      # Connection and timeout errors propagate to the caller.
+      #
+      def delete_documents(path, timeout)
+        http = Net::HTTP.new("127.0.0.1", 8080, nil) # Explicitly disable environment proxies.
+        http.open_timeout = timeout
+        http.read_timeout = timeout
+        http.write_timeout = timeout
+        http.request(Net::HTTP::Delete.new(path))
       end
     end
   end

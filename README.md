@@ -82,14 +82,14 @@ and
 
 ```ruby
 require "bindan"
-require "google/client/storage"
-require "google/client/firestore"
+require "google/cloud/storage"
+require "google/cloud/firestore"
 
 # Define your configuration providers
 providers = {
   env: Bindan::Provider::Envvar.new,
-  storage: Bindan::Provider::Storage.new(bucket: "my-config-bucket"),
-  firestore: Bindan::Provider::Firestore.new(collection: "app-settings")
+  storage: Bindan::Provider::Storage.new("config-bucket", project_id: "my-project"),
+  firestore: Bindan::Provider::Firestore.new("app-settings-collection", project_id: "my-project")
 }
 
 # Configure Bindan
@@ -108,24 +108,24 @@ puts config.feature_flags # => (Value loaded from Firestore)
 
 In the `configure` block, you define how each configuration key is mapped to a provider. The provider name is `providers` Hash key.
 
+Replace `my-project` with your Google Cloud project ID. Storage joins `project_id` and the bucket argument with `separator` (default: `"-"`), so this example reads the `api_key` object from the existing `my-project-config-bucket` bucket. Firestore reads the `app-settings-collection/feature_flags_document` document in the same project.
+
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+After checking out the repo, run `bin/setup` to install development dependencies and pull the emulator images. It does not start the containers.
+
+```bash
+bin/setup
+```
+
+You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
 ### Prerequisites for Development
 
-This gem is designed to interacts with Google Cloud services as a first-class citizen. For local development and testing, it uses emulators. Please install the following tools:
+The development environment includes the following tools for running heavy integration tests locally:
 
-1.  **Google Cloud CLI:** [Installation the gcloud CLI](https://cloud.google.com/sdk/docs/install)
-2.  **Docker:** [Get Docker](https://docs.docker.com/get-docker/)
-3.  **Firestore Emulator:**
-    ```bash
-    gcloud components install cloud-firestore-emulator
-    ```
-4.  **fake-gcs-server:**
-    ```bash
-    docker pull fsouza/fake-gcs-server
-    ```
+1.  **Docker with Docker Compose:** [Get Docker](https://docs.docker.com/get-docker/), with its daemon running.
+2.  **Emulators:** `compose.yml` defines fake-gcs-server and the official Google Cloud CLI emulator image. Java and Firestore are provided inside the image; no host Java or Google Cloud CLI installation is required. Storage fixtures are mounted directly from `spec/support/storage`.
 
 ### Custom Provider
 
@@ -141,11 +141,32 @@ end
 
 ### Running Tests
 
-The test suite is configured to automatically start the emulators (including `fake-gcs-server` via Docker), run the tests against them, and shut them down. Simply run:
+Use the lightweight unit tests during normal development. They do not start emulators:
 
 ```bash
 bundle exec rake spec
 ```
+
+Run the heavy integration tests locally when verifying Provider behavior against the real SDKs and emulators. Start the containers explicitly before running the suite:
+
+```bash
+docker compose up --detach --wait
+bundle exec rake spec:integration
+```
+
+The tests wait for readiness but never start or stop containers. Stop them yourself when no longer needed:
+
+```bash
+docker compose down
+```
+
+CI runs both suites and manages Compose startup, logs and cleanup in the workflow, including cleanup after failures.
+
+Integration tests run serially against Storage on `127.0.0.1:4443` and Firestore on
+`127.0.0.1:8080`. Each Firestore case clears the `bindan-test` project's default
+database before seeding data. Use these emulators for disposable test data only.
+The Firestore controller waits for an SDK request to succeed, not merely a TCP
+connection. The suite does not import or export Firestore data.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
