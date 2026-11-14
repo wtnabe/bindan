@@ -30,13 +30,13 @@ jobs:
           bundler-cache: true
       - name: standard
         run: bundle exec rake standard
-      - name: spec
+      - name: Unit tests (Docker-free)
         run: bundle exec rake spec
       - name: Pull emulator images
         run: docker compose pull
-      - name: Start emulators
+      - name: Start emulators (Storage, Firestore, Secret Manager)
         run: docker compose up --detach --wait --wait-timeout 60
-      - name: integration spec
+      - name: Integration tests (Storage, Firestore, Secret Manager)
         run: bundle exec rake spec:integration
       - name: Emulator logs
         if: always()
