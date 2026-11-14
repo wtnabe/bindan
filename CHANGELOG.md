@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-13
+
+### Added
+
+- Add `Bindan::Provider::SecretManager` to read configuration from Google Cloud Secret Manager.
+
 ## [0.1.2] - 2026-11-12
 
 ### Changed
