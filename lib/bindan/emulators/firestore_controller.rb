@@ -13,7 +13,7 @@ module Bindan
       INITIAL_BACKOFF_KEY_SEC = 0.1 # seconds
       BACKOFF_MULTIPLIER = 1.5
 
-      class Error < StandardError; end
+      class Error < Bindan::Error; end
 
       attr_reader :project_id
 
