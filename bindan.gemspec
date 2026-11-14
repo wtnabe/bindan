@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email = ["18510+wtnabe@users.noreply.github.com"]
 
   spec.summary = "Bindan is a Ruby gem for building single configuration object from various sources with providers."
-  spec.description = "Bindan is a Ruby gem for building single configuration object from various sources with providers (that is bundled  Google Cloud Storage and Firestore platform by default). It provides a flexible way to manage application settings, supporting lazy initialization and seamless switching between development (using emulators) and production (eg. actual GCP services) environments."
+  spec.description = "Bindan is a Ruby gem for building a single configuration object from various sources with providers (including bundled Google Cloud Storage, Firestore, and Secret Manager providers). It provides a flexible way to manage application settings, supporting lazy initialization and seamless switching between development (using emulators) and production (eg. actual GCP services) environments."
   spec.homepage = "https://github.com/wtnabe/bindan"
   spec.required_ruby_version = ">= 3.0.0"
 
