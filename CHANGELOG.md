@@ -1,4 +1,7 @@
-## [Unreleased]
+## [0.2.1] - 2026-11-15
+
+- (feat) Add `Bindan::SecretManagerHelper` and `bindan-secret-update` to add Secret Manager versions from exact file bytes or a known-good numerical version. The helper also retrieves the last created version regardless of its state.
+- (refactor) Make Firestore and Secret Manager emulator controller errors inherit from `Bindan::Error`.
 
 ## [0.2.0] - 2026-11-13
 

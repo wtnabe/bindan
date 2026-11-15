@@ -119,8 +119,36 @@ Replace `my-project` with your Google Cloud project ID. Storage joins `project_i
 Secret Manager also accepts an omitted `project_id:`, using `GOOGLE_CLOUD_PROJECT`
 or `GCLOUD_PROJECT` from the environment. An explicit `project_id:` takes precedence.
 
-For update and revert precautions and commands, see
-[Secret Manager operations](docs/secret-manager-operations.md).
+### Reflecting configuration changes
+
+The current Bindan implementation retains the values resolved by `configure`;
+`config` does not reread the Providers. For now, reflect source changes by replacing
+the application's execution units to acquire the updated values. See the
+[configuration rollout guide](docs/configuration-rollout.md) for App Engine and Cloud Run.
+
+### Updating and reverting Secret Manager values
+
+If you need to revert a Secret Manager value, take care: GCP and the emulator
+differ in how `latest` handles disabled versions. `bindan-secret-update` supports
+both updates and reverts by adding a new version without exposing
+the value.
+
+Install `google-cloud-secret_manager` alongside `bindan`. Use a file for an update,
+or a known-good numerical version for a revert:
+
+```bash
+bundle exec bindan-secret-update --project my-project --secret api-key \
+  --file ./api-key.bin
+
+bundle exec bindan-secret-update --project my-project --secret api-key \
+  --from-version 1
+```
+
+For the behavior differences and the full workflow, see
+[Secret Manager operations from Cloud Shell](docs/secret-manager-operations.md)
+before performing a revert. Neither command refreshes running applications.
+For direct Ruby use, see the example in
+[`Bindan::SecretManagerHelper`](lib/bindan/secret_manager_helper.rb).
 
 ## Development
 

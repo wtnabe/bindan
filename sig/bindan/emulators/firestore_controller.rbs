@@ -11,7 +11,7 @@ module Bindan
 
       BACKOFF_MULTIPLIER: ::Float
 
-      class Error < StandardError
+      class Error < Bindan::Error
       end
 
       @project_id: String

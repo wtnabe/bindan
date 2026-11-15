@@ -1,6 +1,7 @@
 require "google/cloud/secret_manager/v1"
 require "grpc"
 require "logger"
+require_relative "../error"
 
 module Bindan
   module Emulator
@@ -10,7 +11,7 @@ module Bindan
     class SecretManagerController
       WAIT_TIMEOUT = 60 # seconds
 
-      class Error < StandardError; end
+      class Error < Bindan::Error; end
 
       attr_reader :project_id, :client
 
